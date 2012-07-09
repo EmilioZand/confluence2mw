@@ -3,6 +3,8 @@ package com.convert;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.regex.*;
 
 import org.apache.commons.io.FileUtils;
@@ -313,21 +315,42 @@ public class confluenceConvert {
      */
     public static void main(String[] args) throws IOException {
 	// TODO Auto-generated method stub
-	if (args.length != 1) {
-	    System.out.println ("Please enter correct URL!");
+	File Props = new File("convert.properties");
+	if (!Props.exists()) {
+	    System.out.println("Please ensure that there is a valid Properties file.");
 	    System.exit(0);
 	}
-	//	File file_in = new File(args[0]);
-	List<String> conFiles = getFileList(args[0]);
-	int pathStart = args[0].indexOf("source/xref/")+12;
-	int pathEnd = args[0].indexOf("src/site/confluence/");
-	String folderPath = args[0].substring(pathStart, pathEnd);
-	String url = args[0].replace("xref","raw");
+	//Load from convert.properties
+	//-------------------------------------------------
+	Properties myProps = new Properties();
+	FileInputStream MyInputStream = new FileInputStream(Props);
+	myProps.load(MyInputStream);        
+	String myPropValue = myProps.getProperty("propKey");
+	String key = "";
+	String value = "";
+	for (Map.Entry<Object, Object> propItem : myProps.entrySet())
+	{
+	    key = (String) propItem.getKey();
+	    value = (String) propItem.getValue();
+	}
+	MyInputStream.close();
+	String outDir = "";
+	if (myProps.getProperty("outputDirectory").endsWith("/")){
+		outDir = myProps.getProperty("outputDirectory");
+	}
+	else{
+	    outDir = myProps.getProperty("outputDirectory") + "/";
+	}
+	
+	List<String> conFiles = getFileList(myProps.getProperty("inputSite"));
+	int pathStart = myProps.getProperty("inputSite").indexOf("source/xref/")+12;
+	int pathEnd = myProps.getProperty("inputSite").indexOf("src/site/confluence/");
+	String folderPath = myProps.getProperty("inputSite").substring(pathStart, pathEnd);
+	String url = myProps.getProperty("inputSite").replace("xref","raw");
 	for (int i = 0; i < conFiles.size();i++){
-	    File file_out = new File("C:/Confluence/"+folderPath+conFiles.get(i).replace(".confluence", "")+".mw");
+	    File file_out = new File(outDir+folderPath+conFiles.get(i).replace(".confluence", "")+".mw");
 	    FileUtils.writeStringToFile(file_out, convert(getConfluence(url+conFiles.get(i))));
 	}
-	//String input = FileUtils.readFileToString(file_in);
 
     }
 }
