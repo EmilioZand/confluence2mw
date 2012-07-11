@@ -1,0 +1,33 @@
+h1. Commission Subsystem Introduction
+      
+Commission subsystem includes commission management and its integration with the subsequent phases of the commission lifecycle, commission calculation, commission disbursement and commission reporting. Also bonus management and disbursement.
+
+h3. Features
+* Calculation of commission on coverage level and rollup to risk item and policy level 
+* Support for different commission for each coverage
+* Support for % and flat commission by transaction type (e.g. new business, endorsement, rewrite, renewal)
+* Support for product level commission rules via product factory (e.g. commission for young drivers set by product level rule)
+* Support for multiple channels (e.g., independent, direct, ..)
+* Ability to split commission between parent and child agency
+* Ability for cross / multi product bonus
+* Trigger of commission disbursement based on premium or payment 
+* Generation of reimbursement statement 
+* Direct deposit of commission to agencies bank account 
+* View capability for generated statements 
+* Robust business administration for creation and maintenance of commission strategies 
+
+h3. Commission management
+The ability for a business user to define configure and administer commission rates and amounts applied at an individual product level, at a risk item level and at a coverage level. A "commission strategy" specifies the amount of commission to be applied at each level. Default commission values are to be applied when no commission value is explicitly set. The default commission rate is zero. The period when a commission strategy will be applied at a product, risk item or coverage level is determined in the administration of the commission strategy.
+[Commission management details...|commissionManagement]
+
+h3. Commission calculation
+The calculation of commission happens at policy transaction time, new business quote, endorsement, renewal etc. Commission rounding is applied according to the rounding method defined in the commission strategy. Rounding may be applied at a cent, dollar and a no-rounding basis. The commission values are set during the commission management administration process and commission rules defined for the product in product factory. The commission rate retrieval rules are defined to execute in a predefined order sequence. The commission rate default is zero if no commission rate can be retrieved successfully.
+[Commission calculation details...|commissionCalculation]
+
+h3. Commission disbursement
+The commission payment or disbursement schedule is defined and dependent on the available schedules in the quartz based batch process system. (Monthly, quarterly or annually). The commission payment will be transferred to the agency payee account using EFT.
+[Commission disbursement details...|commissionDisbursement]
+
+h3. Commission reporting
+Commission is reported on a per product basis or on a commission sales channel basis especially when considering bonus commission.
+[Commission bonus details...|commissionBonus]

@@ -19,7 +19,7 @@ import org.apache.http.impl.client.*;
 
 public class confluenceConvert {
 
-    private static String convert(String input){
+    public static String convert(String input){
 	String text = input;
 	String REGEX = null;
 	String REPLACE = null;
@@ -264,7 +264,7 @@ public class confluenceConvert {
 	return text;
     }
 
-    private static List<String> getFileList(String URL) throws IllegalStateException, IOException{
+     public static List<String> getFileList(String URL) throws IllegalStateException, IOException{
 	List <String> matches = new ArrayList <String> ();
 	List <Pattern> patterns = new ArrayList <Pattern> ();
 	BufferedReader buf = null;
@@ -298,8 +298,13 @@ public class confluenceConvert {
 	}
 	return matches;
     }
-
-    private static String getConfluence(String URL)throws IllegalStateException, IOException{
+    public static String readFile(String filePath) throws IOException{
+	File file = new File(filePath);
+	String output = FileUtils.readFileToString(file);
+	return output; 
+	
+    }
+    public static String getConfluence(String URL)throws IllegalStateException, IOException{
 	HttpClient client = new DefaultHttpClient();
 	HttpGet httpget = new HttpGet(URL);
 	HttpResponse response = client.execute(httpget);
