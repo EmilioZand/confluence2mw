@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
 public class confluenceConvertTest extends confluenceConvert {
@@ -12,8 +13,8 @@ public class confluenceConvertTest extends confluenceConvert {
     @Test
     public void testConvert() throws IOException{
 	confluenceConvert tester = new confluenceConvert();
-	String expectedResult = confluenceConvert.readFile("test/com/convert/test.mw").trim();
-	String input = confluenceConvert.readFile("test/com/convert/test.confluence").trim();
+	String expectedResult = FileUtils.readFileToString(new File("test/com/convert/test.mw")).trim();
+	String input = FileUtils.readFileToString(new File("test/com/convert/test.confluence")).trim();
 	assertEquals("Converted Text",expectedResult, confluenceConvert.convert(input).trim());
     }
 

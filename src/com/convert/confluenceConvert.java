@@ -1,11 +1,13 @@
 package com.convert;
 
 import java.io.*;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.*;
+
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -129,7 +131,7 @@ public class confluenceConvert {
 	/* Replace thumbnail images */
 	text = text.replaceAll("\n\\!([^|]+)[|]\\s*thumbnail\\s*\\!\\s*\n", "\n~~ATTACHED_IMAGE_THUMBNAIL~~$1\n");
 	text = text.replaceAll("\n\\!\\s*(http[^|]+)?\\!\\s*\n", "\n~~REMOTE_IMAGE~~$1\n");
-	text = text.replaceAll("\n\\!([^|]+)?\\!\\s*\n", "\n~~ATTACHED_IMAGE~~$1\n");
+	text = text.replaceAll("\n\\!([^|]+)?!\\s*\n", "\n~~ATTACHED_IMAGE~~$1\n");
 
 	// detect a table-plus
 	text = text.replaceAll("\\{table-plus(.*)\\}\n*((.|\n)*?)\n*\\{table-plus\\}", "\n~~TABLEPLUS~~\n$2\n");
@@ -264,12 +266,12 @@ public class confluenceConvert {
 	return text;
     }
 
-     public static List<String> getFileList(String URL) throws IllegalStateException, IOException{
+    public static List<String> getFileList(String URL) throws IllegalStateException, IOException{
 	List <String> matches = new ArrayList <String> ();
 	List <Pattern> patterns = new ArrayList <Pattern> ();
 	BufferedReader buf = null;
 	String match = null;
-	patterns.add (Pattern.compile ("class=\"p\">(.*?)</a>"));
+	patterns.add (Pattern.compile ("<a\\s*(href=)?('|\")[^'\"]+('|\") class=('|\")p('|\")>"));
 	HttpClient client = new DefaultHttpClient();
 	HttpGet httpget = new HttpGet(URL);
 	HttpResponse response = client.execute(httpget);
@@ -285,8 +287,8 @@ public class confluenceConvert {
 			Matcher m = p.matcher (str);
 			while (m.find ()) {
 			    match = m.group();
-			    match = match.replace("class=\"p\">","");
-			    match = match.replace("</a>","");
+			    match = match.replace("<a href=\"","");
+			    match = match.replace("\" class=\"p\">","");
 			    matches.add (match);
 			}
 		    }
@@ -298,12 +300,7 @@ public class confluenceConvert {
 	}
 	return matches;
     }
-    public static String readFile(String filePath) throws IOException{
-	File file = new File(filePath);
-	String output = FileUtils.readFileToString(file);
-	return output; 
-	
-    }
+
     public static String getConfluence(String URL)throws IllegalStateException, IOException{
 	HttpClient client = new DefaultHttpClient();
 	HttpGet httpget = new HttpGet(URL);
@@ -312,6 +309,22 @@ public class confluenceConvert {
 	InputStream inputStream = (InputStream) entity.getContent ();
 	String text = IOUtils.toString(inputStream);
 	return text;
+    }
+    public static void downloadResources(String url, List<String> Resources, String Directory){
+    try {
+	   String fileName = "";
+	   for(int i = 0; i <Resources.size();i++){
+	    fileName = Resources.get(i);
+	    URL u = new URL(url+fileName);
+	    fileName = fileName.replaceAll("%20", " ");
+	    System.out.println(" Downloading: " + fileName);
+	    FileUtils.copyURLToFile(u, new File(Directory+fileName));
+	   }
+	   
+	   
+	  } catch(IOException e) {
+	   e.printStackTrace();
+	  }
     }
 
     /**
@@ -346,17 +359,30 @@ public class confluenceConvert {
 	else{
 	    outDir = myProps.getProperty("outputDirectory") + "/";
 	}
-	
-	List<String> conFiles = getFileList(myProps.getProperty("inputSite"));
-	int pathStart = myProps.getProperty("inputSite").indexOf("source/xref/")+12;
-	int pathEnd = myProps.getProperty("inputSite").indexOf("src/site/confluence/");
-	String folderPath = myProps.getProperty("inputSite").substring(pathStart, pathEnd);
-	String url = myProps.getProperty("inputSite").replace("xref","raw");
-	for (int i = 0; i < conFiles.size();i++){
-	    File file_out = new File(outDir+folderPath+conFiles.get(i).replace(".confluence", "")+".mw");
-	    FileUtils.writeStringToFile(file_out, convert(getConfluence(url+conFiles.get(i))));
+	String URL = "";
+	if (myProps.getProperty("inputSite").endsWith("/")){
+		URL = myProps.getProperty("inputSite");
 	}
-
+	else{
+	    URL = myProps.getProperty("inputSite") + "/";
+	}
+	
+	List<String> conFiles = getFileList(myProps.getProperty("inputSite")+"src/site/confluence/");
+	int pathStart = myProps.getProperty("inputSite").indexOf("source/xref/")+12;
+	String folderPath = myProps.getProperty("inputSite").substring(pathStart);
+	String resourceURL = myProps.getProperty("inputSite")+"src/site/resources/";
+	String rawURL = myProps.getProperty("inputSite").replace("xref","raw")+"src/site/";
+	String confluence = "";
+	List<String> Resources = getFileList(resourceURL);
+	List<String> Images = getFileList(resourceURL+"images/");
+	for (int i = 0; i < conFiles.size();i++){
+	    System.out.println(" Converting: " + conFiles.get(i));
+	    File file_out = new File(outDir+folderPath+conFiles.get(i).replace(".confluence", "")+".mw");
+	    confluence = getConfluence(rawURL+"confluence/"+conFiles.get(i));
+	    FileUtils.writeStringToFile(file_out, convert(confluence));
+	}
+	downloadResources(rawURL+"resources/",Resources,outDir+folderPath+"resources/");
+	downloadResources(rawURL+"resources/images/",Images,outDir+folderPath+"resources/images/");
     }
 }
 
