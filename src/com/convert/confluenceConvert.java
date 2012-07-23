@@ -195,7 +195,7 @@ public class confluenceConvert {
 	// Fix except for files with blank cells
 	text = text.replaceAll("~~CELLSTART~~\\W\n", "~~ROWSTART~~");
 	text = text.replaceAll("~~CELLSTART~~([^|]*?)[|]", "\n~~CELLSTART~~$1");
-	text = text.replaceAll("^[|]-\n[|] '''", "|- style=\"background-color:#f0f0f0;\"\n| \'\'\'"	);
+	text = text.replaceAll("^[|]-\n[|] '''", "|- style=\"background-color:#f0f0f0;\"\n| \'\'\'");
 
 	// formatting
 	/*text = text.replace("*(?!*)(.+?)*(?!*)", "'''$1'''");*/
@@ -261,9 +261,19 @@ public class confluenceConvert {
 	text = text.replaceAll("\n[|][-]\n[|][-]\n", "\n|-\n");
 	text = text.replaceAll("[\n\\s]+[{][|]", "\n{|");
 	text = text.replaceAll("[\n\\s]+[!]([^!])", "\n!$1");
-	/*text = text.replaceAll("\n[|]\n+[|]([^\\}-])", "\n|$1");*/    
+	text = text.replaceAll("\n[|]\n+[|]([^\\}-])", "\n|$1");    
 
 	return text;
+    }
+    
+    public static String fixImageTag(String orig){
+	String REGEX = "^!(.+)!$";
+	String REPLACE = "~~ATTACHED_IMAGE~~$1";
+	Pattern p = Pattern.compile(REGEX, Pattern.MULTILINE);
+	// get a matcher object
+	Matcher m = p.matcher(orig); 
+	orig = m.replaceAll(REPLACE);
+	return orig;
     }
 
     public static List<String> getFileList(String URL) throws IllegalStateException, IOException{
@@ -379,6 +389,7 @@ public class confluenceConvert {
 	    System.out.println(" Converting: " + conFiles.get(i));
 	    File file_out = new File(outDir+folderPath+conFiles.get(i).replace(".confluence", "")+".mw");
 	    confluence = getConfluence(rawURL+"confluence/"+conFiles.get(i));
+	    confluence = fixImageTag(confluence);
 	    FileUtils.writeStringToFile(file_out, convert(confluence));
 	}
 	downloadResources(rawURL+"resources/",Resources,outDir+folderPath+"resources/");
