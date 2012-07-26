@@ -18,18 +18,18 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.*;
 
 /**
- * Confluence2Mediawiki Converter
- * @author Emilio Zand
+ * Confluence2Mediawiki Converter - 
  * Reads a loki URL from the convert.properties file located in the directory.
  * Converts and downloads all confluence files listed at that URL.
  * Downloads all attatchments found in the resource folder.
+ * @author Emilio Zand
  */
 public class confluenceConvert {
 	
 	/**
 	 * Confluence converting method
-	 * @param input
-	 * @return String
+	 * @param input - the input confluence string that is to be converted
+	 * @return The converted mediawiki String
 	 */
     public static String convert(String input){
 	String text = input;
@@ -277,15 +277,15 @@ public class confluenceConvert {
 	text = text.replaceAll("[\n\\s]+[!]([^!])", "\n!$1");
 	text = text.replaceAll("\n[|]\n+[|]([^\\}-])", "\n|$1");  
 	
-	/* Change image tags to metadata compatable tags*/
+	/* Change image tags to metadata compatible tags*/
 	text = text.replaceAll("~~ATTACHED_IMAGE~~(.+)", "[[File:$1]]");
 	return text;
     }
 
     /**
      * Retrieve File list from loki directory site
-     * @param URL
-     * @return List<String>
+     * @param URL - The URL as a String that points to the loki directory
+     * @return The list of files as a List<String>
      * @throws IllegalStateException
      * @throws IOException
      */
@@ -326,8 +326,8 @@ public class confluenceConvert {
 
     /**
      * Retrieve confluence file from loki as String
-     * @param URL
-     * @return String
+     * @param URL - The URL to a confluence file
+     * @return String - The confluence file parsed as a string
      * @throws IllegalStateException
      * @throws IOException
      */
@@ -343,9 +343,9 @@ public class confluenceConvert {
     
     /**
      * Downloads all files found in the Resource directory on Loki
-     * @param url
-     * @param Resources
-     * @param Directory
+     * @param url - The base URL as a String to the loki resource directory
+     * @param Resources - Passes a List<String> containing the resource file list
+     * @param Directory - The local directory the files should be saved in
      */
     private static void downloadResources(String url, List<String> Resources, String Directory){
     try {
