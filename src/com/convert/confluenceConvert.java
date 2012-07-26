@@ -13,14 +13,24 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.*;
 
+/**
+ * Confluence2Mediawiki Converter
+ * @author Emilio Zand
+ * Reads a loki URL from the convert.properties file located in the directory.
+ * Converts and downloads all confluence files listed at that URL.
+ * Downloads all attatchments found in the resource folder.
+ */
 public class confluenceConvert {
-
+	
+	/**
+	 * Confluence converting method
+	 * @param input
+	 * @return String
+	 */
     public static String convert(String input){
 	String text = input;
 	String REGEX = null;
@@ -39,6 +49,7 @@ public class confluenceConvert {
 	text = text.replaceAll("[\\]](?=(?:(?!\\{startnoformat)[\\s\\S])*?\\{endnoformat\\})", "~~ENDBRACKET~~");
 	text = text.replaceAll("[\\\\](?=(?:(?!\\{startnoformat)[\\s\\S])*?\\{endnoformat\\})", "~~BACKSLASH~~");
 	text = text.replaceAll("[\\*](?=(?:(?!\\{startnoformat)[\\s\\S])*?\\{endnoformat\\})", "~~STAR~~");
+	
 	/* convert confluence newlines */
 	text = text.replaceAll("\134\134", "<br/>");
 
@@ -127,11 +138,14 @@ public class confluenceConvert {
 
 	/* Replace escape sequences - \ */
 	text = text.replaceAll("\\\\(\\S)", "<nowiki>$1</nowiki>");
-
-	/* Replace thumbnail images */
-	text = text.replaceAll("\n\\!([^|]+)[|]\\s*thumbnail\\s*\\!\\s*\n", "\n~~ATTACHED_IMAGE_THUMBNAIL~~$1\n");
-	text = text.replaceAll("\n\\!\\s*(http[^|]+)?\\!\\s*\n", "\n~~REMOTE_IMAGE~~$1\n");
-	text = text.replaceAll("\n\\!([^|]+)?!\\s*\n", "\n~~ATTACHED_IMAGE~~$1\n");
+	
+	/* detect embeded images*/
+	REGEX = "^!(.+)!$";
+	REPLACE = "~~ATTACHED_IMAGE~~$1";
+	p = Pattern.compile(REGEX, Pattern.MULTILINE);
+	// get a matcher object
+	m = p.matcher(text); 
+	text = m.replaceAll(REPLACE);
 
 	// detect a table-plus
 	text = text.replaceAll("\\{table-plus(.*)\\}\n*((.|\n)*?)\n*\\{table-plus\\}", "\n~~TABLEPLUS~~\n$2\n");
@@ -261,22 +275,21 @@ public class confluenceConvert {
 	text = text.replaceAll("\n[|][-]\n[|][-]\n", "\n|-\n");
 	text = text.replaceAll("[\n\\s]+[{][|]", "\n{|");
 	text = text.replaceAll("[\n\\s]+[!]([^!])", "\n!$1");
-	text = text.replaceAll("\n[|]\n+[|]([^\\}-])", "\n|$1");    
-
+	text = text.replaceAll("\n[|]\n+[|]([^\\}-])", "\n|$1");  
+	
+	/* Change image tags to metadata compatable tags*/
+	text = text.replaceAll("~~ATTACHED_IMAGE~~(.+)", "[[File:$1]]");
 	return text;
     }
-    
-    public static String fixImageTag(String orig){
-	String REGEX = "^!(.+)!$";
-	String REPLACE = "~~ATTACHED_IMAGE~~$1";
-	Pattern p = Pattern.compile(REGEX, Pattern.MULTILINE);
-	// get a matcher object
-	Matcher m = p.matcher(orig); 
-	orig = m.replaceAll(REPLACE);
-	return orig;
-    }
 
-    public static List<String> getFileList(String URL) throws IllegalStateException, IOException{
+    /**
+     * Retrieve File list from loki directory site
+     * @param URL
+     * @return List<String>
+     * @throws IllegalStateException
+     * @throws IOException
+     */
+    private static List<String> getFileList(String URL) throws IllegalStateException, IOException{
 	List <String> matches = new ArrayList <String> ();
 	List <Pattern> patterns = new ArrayList <Pattern> ();
 	BufferedReader buf = null;
@@ -311,7 +324,14 @@ public class confluenceConvert {
 	return matches;
     }
 
-    public static String getConfluence(String URL)throws IllegalStateException, IOException{
+    /**
+     * Retrieve confluence file from loki as String
+     * @param URL
+     * @return String
+     * @throws IllegalStateException
+     * @throws IOException
+     */
+    private static String getConfluence(String URL)throws IllegalStateException, IOException{
 	HttpClient client = new DefaultHttpClient();
 	HttpGet httpget = new HttpGet(URL);
 	HttpResponse response = client.execute(httpget);
@@ -320,7 +340,14 @@ public class confluenceConvert {
 	String text = IOUtils.toString(inputStream);
 	return text;
     }
-    public static void downloadResources(String url, List<String> Resources, String Directory){
+    
+    /**
+     * Downloads all files found in the Resource directory on Loki
+     * @param url
+     * @param Resources
+     * @param Directory
+     */
+    private static void downloadResources(String url, List<String> Resources, String Directory){
     try {
 	   String fileName = "";
 	   for(int i = 0; i <Resources.size();i++){
@@ -341,7 +368,7 @@ public class confluenceConvert {
      * @param args
      * @throws IOException 
      */
-    public static void main(String[] args) throws IOException {
+    public void main(String[] args) throws IOException {
 	// TODO Auto-generated method stub
 	File Props = new File("convert.properties");
 	if (!Props.exists()) {
@@ -362,6 +389,8 @@ public class confluenceConvert {
 	    value = (String) propItem.getValue();
 	}
 	MyInputStream.close();
+	
+	/* Check and fix Output directory and Input URL syntax */
 	String outDir = "";
 	if (myProps.getProperty("outputDirectory").endsWith("/")){
 		outDir = myProps.getProperty("outputDirectory");
@@ -389,7 +418,6 @@ public class confluenceConvert {
 	    System.out.println(" Converting: " + conFiles.get(i));
 	    File file_out = new File(outDir+folderPath+conFiles.get(i).replace(".confluence", "")+".mw");
 	    confluence = getConfluence(rawURL+"confluence/"+conFiles.get(i));
-	    confluence = fixImageTag(confluence);
 	    FileUtils.writeStringToFile(file_out, convert(confluence));
 	}
 	downloadResources(rawURL+"resources/",Resources,outDir+folderPath+"resources/");
