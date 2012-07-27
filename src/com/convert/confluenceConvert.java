@@ -32,7 +32,10 @@ public class confluenceConvert {
 	 * @return The converted mediawiki String
 	 */
     public static String convert(String input){
-	String text = input;
+	if (input==null){
+		throw new IllegalArgumentException("Confluence string is null");
+	}
+    String text = input;
 	String REGEX = null;
 	String REPLACE = null;
 	Pattern p = null;
@@ -290,6 +293,9 @@ public class confluenceConvert {
      * @throws IOException
      */
     private static List<String> getFileList(String URL) throws IllegalStateException, IOException{
+    	if (URL==null){
+    		throw new IllegalArgumentException("Inputted URL is null");
+    	}
 	List <String> matches = new ArrayList <String> ();
 	List <Pattern> patterns = new ArrayList <Pattern> ();
 	BufferedReader buf = null;
@@ -332,6 +338,9 @@ public class confluenceConvert {
      * @throws IOException
      */
     private static String getConfluence(String URL)throws IllegalStateException, IOException{
+    	if (URL==null){
+    		throw new IllegalArgumentException("Inputted URL is null");
+    	}
 	HttpClient client = new DefaultHttpClient();
 	HttpGet httpget = new HttpGet(URL);
 	HttpResponse response = client.execute(httpget);
@@ -348,6 +357,15 @@ public class confluenceConvert {
      * @param Directory - The local directory the files should be saved in
      */
     private static void downloadResources(String url, List<String> Resources, String Directory){
+    	if (url==null){
+    		throw new IllegalArgumentException("Inputted URL is null");
+    	}
+    	if (Resources.size()<1){
+    		throw new IllegalArgumentException("Resources List contains no entries");
+    	}
+    	if (Directory==null){
+    		throw new IllegalArgumentException("Inputed Directory is null");
+    	}
     try {
 	   String fileName = "";
 	   for(int i = 0; i <Resources.size();i++){
@@ -368,7 +386,7 @@ public class confluenceConvert {
      * @param args
      * @throws IOException 
      */
-    public void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException {
 	// TODO Auto-generated method stub
 	File Props = new File("convert.properties");
 	if (!Props.exists()) {
@@ -392,25 +410,20 @@ public class confluenceConvert {
 	
 	/* Check and fix Output directory and Input URL syntax */
 	String outDir = "";
-	if (myProps.getProperty("outputDirectory").endsWith("/")){
+	if (myProps.getProperty("outputDirectory").endsWith("/")||myProps.getProperty("outputDirectory").endsWith("\\")){
 		outDir = myProps.getProperty("outputDirectory");
 	}
 	else{
 	    outDir = myProps.getProperty("outputDirectory") + "/";
 	}
-	String URL = "";
-	if (myProps.getProperty("inputSite").endsWith("/")){
-		URL = myProps.getProperty("inputSite");
-	}
-	else{
-	    URL = myProps.getProperty("inputSite") + "/";
-	}
 	
-	List<String> conFiles = getFileList(myProps.getProperty("inputSite")+"src/site/confluence/");
-	int pathStart = myProps.getProperty("inputSite").indexOf("source/xref/")+12;
-	String folderPath = myProps.getProperty("inputSite").substring(pathStart);
-	String resourceURL = myProps.getProperty("inputSite")+"src/site/resources/";
-	String rawURL = myProps.getProperty("inputSite").replace("xref","raw")+"src/site/";
+	String inputSite = "http://loki.internal.corp/source/xref/eis-"+myProps.getProperty("version")+"/"+myProps.getProperty("source")+"/";
+	List<String> conFiles = getFileList(inputSite+"src/site/confluence/");
+	int pathStart = inputSite.indexOf("source/xref/")+12;
+	String folderPath = inputSite.substring(pathStart);
+	String resourceURL = inputSite+"src/site/resources/";
+	String rawURL = inputSite.replace("xref","raw")+"src/site/";
+	
 	String confluence = "";
 	List<String> Resources = getFileList(resourceURL);
 	List<String> Images = getFileList(resourceURL+"images/");
