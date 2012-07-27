@@ -3,6 +3,7 @@ package com.convert;
 import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -25,6 +26,59 @@ import org.apache.http.impl.client.*;
  * @author Emilio Zand
  */
 public class confluenceConvert {
+	
+	/**
+	 * Initiating Method
+	 * @param myProps
+	 * @return Variables - a hashmap containing variables needed for the conversion
+	 * @throws IOException
+	 */
+	private static Map<String,Object> Init(Properties myProps) throws IOException{
+		
+		Map<String,Object> Variables = new HashMap<String,Object>();
+		
+		/* Check and fix Output directory and Input URL syntax */
+		if (myProps.getProperty("outputDirectory").endsWith("/")||myProps.getProperty("outputDirectory").endsWith("\\")){
+			Variables.put("outDir", myProps.getProperty("outputDirectory"));
+		}
+		else{
+			Variables.put("outDir", myProps.getProperty("outputDirectory") + "/");
+		}
+		
+		String inputSite = myProps.getProperty("baseURL")+myProps.getProperty("version")+"/"+myProps.getProperty("source")+"/";
+		int pathStart = inputSite.indexOf("source/xref/")+12;
+		Variables.put("conFiles", getFileList(inputSite+"src/site/confluence/"));
+		Variables.put("folderPath", inputSite.substring(pathStart));
+		Variables.put("resourceURL", inputSite+"src/site/resources/");
+		Variables.put("rawURL", inputSite.replace("xref","raw")+"src/site/");
+		
+		return Variables;		
+	}
+	
+	/**
+	 * Conversion and Downloading of confluence files and resources
+	 * @param Variables
+	 * @throws IOException
+	 */
+	private static void convertFiles (Map<String,Object> Variables) throws IOException{
+		
+		List<String> Resources = getFileList((String) Variables.get("resourceURL"));
+		List<String> Images = getFileList((String) Variables.get("resourceURL")+"images/");
+		List<String> conFiles = (List<String>) Variables.get("conFiles");
+		String rawURL = (String) Variables.get("rawURL");
+		String outDir = (String) Variables.get("outDir");
+		String folderPath = (String) Variables.get("folderPath");
+		String confluence = "";
+		
+		for (int i = 0; i < conFiles.size();i++){
+		    System.out.println(" Converting: " + conFiles.get(i));
+		    File file_out = new File(outDir+folderPath+conFiles.get(i).replace(".confluence", "")+".mw");
+		    confluence = getConfluence(rawURL+"confluence/"+conFiles.get(i));
+		    FileUtils.writeStringToFile(file_out, convert(confluence));
+		}
+		downloadResources(rawURL+"resources/",Resources,outDir+folderPath+"resources/");
+		downloadResources(rawURL+"resources/images/",Images,outDir+folderPath+"resources/images/");
+	}
 	
 	/**
 	 * Confluence converting method
@@ -408,33 +462,8 @@ public class confluenceConvert {
 	}
 	MyInputStream.close();
 	
-	/* Check and fix Output directory and Input URL syntax */
-	String outDir = "";
-	if (myProps.getProperty("outputDirectory").endsWith("/")||myProps.getProperty("outputDirectory").endsWith("\\")){
-		outDir = myProps.getProperty("outputDirectory");
-	}
-	else{
-	    outDir = myProps.getProperty("outputDirectory") + "/";
-	}
-	
-	String inputSite = "http://loki.internal.corp/source/xref/eis-"+myProps.getProperty("version")+"/"+myProps.getProperty("source")+"/";
-	List<String> conFiles = getFileList(inputSite+"src/site/confluence/");
-	int pathStart = inputSite.indexOf("source/xref/")+12;
-	String folderPath = inputSite.substring(pathStart);
-	String resourceURL = inputSite+"src/site/resources/";
-	String rawURL = inputSite.replace("xref","raw")+"src/site/";
-	
-	String confluence = "";
-	List<String> Resources = getFileList(resourceURL);
-	List<String> Images = getFileList(resourceURL+"images/");
-	for (int i = 0; i < conFiles.size();i++){
-	    System.out.println(" Converting: " + conFiles.get(i));
-	    File file_out = new File(outDir+folderPath+conFiles.get(i).replace(".confluence", "")+".mw");
-	    confluence = getConfluence(rawURL+"confluence/"+conFiles.get(i));
-	    FileUtils.writeStringToFile(file_out, convert(confluence));
-	}
-	downloadResources(rawURL+"resources/",Resources,outDir+folderPath+"resources/");
-	downloadResources(rawURL+"resources/images/",Images,outDir+folderPath+"resources/images/");
+	convertFiles(Init(myProps));
+
     }
 }
 
