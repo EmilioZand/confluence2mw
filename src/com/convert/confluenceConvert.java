@@ -462,6 +462,7 @@ public class confluenceConvert {
 	}
 	MyInputStream.close();
 	
+	// Main converting method
 	convertFiles(Init(myProps));
 
     }
