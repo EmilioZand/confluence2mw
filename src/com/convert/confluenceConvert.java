@@ -17,6 +17,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.*;
+import org.apache.commons.cli.*;
 
 /**
  * Confluence2Mediawiki Converter - 
@@ -411,13 +412,10 @@ public class confluenceConvert {
      * @param Directory - The local directory the files should be saved in
      */
     private static void downloadResources(String url, List<String> Resources, String Directory){
-    	if (url==null){
+    	if (url==null||url.equalsIgnoreCase("")){
     		throw new IllegalArgumentException("Inputted URL is null");
     	}
-    	if (Resources.size()<1){
-    		throw new IllegalArgumentException("Resources List contains no entries");
-    	}
-    	if (Directory==null){
+    	if (Directory==null||Directory.equalsIgnoreCase("")){
     		throw new IllegalArgumentException("Inputed Directory is null");
     	}
     try {
@@ -436,11 +434,32 @@ public class confluenceConvert {
 	  }
     }
 
+    private static void getArgs(String[] args, Properties myProps) throws ParseException{
+    	Options options = new Options();
+    	options.addOption("v", true, "version number");
+    	options.addOption("s", true, "confluence source");
+    	
+    	CommandLineParser parser = new PosixParser();
+    	CommandLine cmd = parser.parse( options, args);
+    	
+    	// get v option value
+    	String version = cmd.getOptionValue("v");
+    	String source = cmd.getOptionValue("s");
+
+    	if(version != null) {
+    	    myProps.put("version", version);
+    	}
+    	if(source != null) {
+    	    myProps.put("source", source);
+    	}
+    }
+    
     /**
      * @param args
      * @throws IOException 
+     * @throws ParseException  
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, ParseException {
 	// TODO Auto-generated method stub
 	File Props = new File("convert.properties");
 	if (!Props.exists()) {
@@ -461,6 +480,9 @@ public class confluenceConvert {
 	    value = (String) propItem.getValue();
 	}
 	MyInputStream.close();
+	
+	// Replace Properties values with values passed through command line.
+	getArgs(args,myProps);
 	
 	// Main converting method
 	convertFiles(Init(myProps));
