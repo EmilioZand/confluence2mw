@@ -44,6 +44,21 @@ public class ConfluenceConvert {
 	 */
 	private static Map<String,Object> init(Properties myProps) throws IOException{
 		
+		/*Checks to see if convert.properties is valid*/
+		if(myProps.getProperty("version")==null){
+			throw new IllegalArgumentException("Error: invalid convert.properties file, no version specified");			
+		}
+		if(myProps.getProperty("source")==null){
+			throw new IllegalArgumentException("Error: invalid convert.properties file, no source specified");			
+		}
+		if(myProps.getProperty("baseURL")==null){
+			throw new IllegalArgumentException("Error: invalid convert.properties file, no baseURL specified");			
+		}
+		if(myProps.getProperty("outputDirectory")==null){
+			throw new IllegalArgumentException("Error: invalid convert.properties file, no outputDirectory specified");			
+		}
+		
+		
 		Map<String,Object> Variables = new HashMap<String,Object>();
 		
 		/* Check and fix Output directory and Input URL syntax */
@@ -107,7 +122,11 @@ public class ConfluenceConvert {
 		downloadResources(rawURL+LOCAL_IMAGE_PATH,images,outDir+folderPath+LOCAL_IMAGE_PATH);
 		}
 	}
-	
+	/**
+	 * Converts a local .confluence file 
+	 * @param Variables
+	 * @throws IOException
+	 */
 	private static void convertLocalFile (Map<String,Object> Variables) throws IOException{
 		String filePath = (String) Variables.get("file");
 		File conFile = new File(filePath);
@@ -118,6 +137,12 @@ public class ConfluenceConvert {
 		File file_out = new File(outDir+fileName.replace(".confluence", ".mw"));
 		FileUtils.writeStringToFile(file_out, convert(confluence));
 	}
+	
+	/**
+	 * Converts a .confluence file at specified URL
+	 * @param Variables
+	 * @throws IOException
+	 */
 	private static void convertURL(Map<String,Object> Variables) throws IOException{
 		String outDir = (String) Variables.get("outDir");
 		String URL = (String) Variables.get("URL");
