@@ -54,6 +54,14 @@ public class ConfluenceConvert {
 			Variables.put("outDir", myProps.getProperty("outputDirectory") + "/");
 		}
 		
+		if((String) myProps.get("file")!=null){
+			Variables.put("file", myProps.get("file"));
+		}
+		if((String) myProps.get("URL")!=null){
+			Variables.put("URL", myProps.get("URL"));
+		}
+		
+		
 		String inputSite = myProps.getProperty("baseURL")+myProps.getProperty("version")+"/"+myProps.getProperty("source")+"/";
 		// The 12 is the length of "source/xref"
 		int pathStart = inputSite.indexOf("source/xref/")+12;
@@ -70,8 +78,17 @@ public class ConfluenceConvert {
 	 * @param Variables
 	 * @throws IOException
 	 */
+	@SuppressWarnings("unchecked")
 	private static void convertFiles (Map<String,Object> Variables) throws IOException{
-		
+		if((String) Variables.get("file")!=null||(String) Variables.get("URL")!=null){
+			if((String) Variables.get("file")!=null){
+				convertLocalFile(Variables);
+			}
+			if((String) Variables.get("URL")!=null){
+				convertURL(Variables);
+			}
+		}
+		else{
 		List<String> Resources = getFileList((String) Variables.get("resourceURL"));
 		List<String> images = getFileList((String) Variables.get("resourceURL")+"images/");
 		List<String> conFiles = (List<String>) Variables.get("conFiles");
@@ -82,12 +99,33 @@ public class ConfluenceConvert {
 		
 		for (int i = 0; i < conFiles.size();i++){
 		    System.out.println(" Converting: " + conFiles.get(i));
-		    File file_out = new File(outDir+folderPath+conFiles.get(i).replace(".confluence", "")+".mw");
+		    File file_out = new File(outDir+folderPath+conFiles.get(i).replace(".confluence", ".mw"));
 		    confluence = getConfluence(rawURL+"confluence/"+conFiles.get(i));
 		    FileUtils.writeStringToFile(file_out, convert(confluence));
 		}
 		downloadResources(rawURL+LOCAL_RESOURCE_PATH,Resources,outDir+folderPath+LOCAL_RESOURCE_PATH);
 		downloadResources(rawURL+LOCAL_IMAGE_PATH,images,outDir+folderPath+LOCAL_IMAGE_PATH);
+		}
+	}
+	
+	private static void convertLocalFile (Map<String,Object> Variables) throws IOException{
+		String filePath = (String) Variables.get("file");
+		File conFile = new File(filePath);
+		String fileName = conFile.getName();
+		String outDir = (String) Variables.get("outDir");
+		String confluence = FileUtils.readFileToString(conFile);
+		System.out.println(" Converting: " + fileName);
+		File file_out = new File(outDir+fileName.replace(".confluence", ".mw"));
+		FileUtils.writeStringToFile(file_out, convert(confluence));
+	}
+	private static void convertURL(Map<String,Object> Variables) throws IOException{
+		String outDir = (String) Variables.get("outDir");
+		String URL = (String) Variables.get("URL");
+		String confluence = getConfluence(URL);
+		String fileName = URL.substring(URL.lastIndexOf("/")+1);
+		System.out.println(" Converting: " + fileName);
+		File file_out = new File(outDir+fileName.replace(".confluence",".mw"));
+		FileUtils.writeStringToFile(file_out, convert(confluence));
 	}
 	
 	/**
@@ -453,13 +491,17 @@ public class ConfluenceConvert {
     	Options options = new Options();
     	options.addOption("v", true, "version number");
     	options.addOption("s", true, "confluence source");
+    	options.addOption("u", true, "URL");
+    	options.addOption("f", true, "local file path");
     	
     	CommandLineParser parser = new PosixParser();
     	CommandLine cmd = parser.parse( options, args);
     	
-    	// get v option value
+    	// get option values
     	String version = cmd.getOptionValue("v");
     	String source = cmd.getOptionValue("s");
+    	String URL = cmd.getOptionValue("u");
+    	String file = cmd.getOptionValue("f");
 
     	if(version != null) {
     	    myProps.put("version", version);
@@ -467,6 +509,13 @@ public class ConfluenceConvert {
     	if(source != null) {
     	    myProps.put("source", source);
     	}
+    	if(URL != null) {
+    	    myProps.put("URL", URL);
+    	}
+    	if(file != null) {
+    	    myProps.put("file", file);
+    	}
+    	
     }
     
     /**
@@ -498,6 +547,7 @@ public class ConfluenceConvert {
 	
 	// Replace Properties values with values passed through command line.
 	fillPropsWithArgs(args,myProps);
+	
 	
 	// Main converting method
 	convertFiles(init(myProps));
