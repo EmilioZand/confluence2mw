@@ -8,13 +8,12 @@ import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
-public class confluenceConvertTest extends confluenceConvert {
+public class confluenceConvertTest extends ConfluenceConvert {
 
     @Test
     public void testConvert() throws IOException{
-	confluenceConvert tester = new confluenceConvert();
 	String expectedResult = FileUtils.readFileToString(new File("test/com/convert/test.mw")).trim();
 	String input = FileUtils.readFileToString(new File("test/com/convert/test.confluence")).trim();
-	assertEquals("Converted Text does not match the expected result",expectedResult, confluenceConvert.convert(input).trim());
+	assertEquals("Converted Text does not match the expected result",expectedResult, ConfluenceConvert.convert(input).trim());
     }
 }
