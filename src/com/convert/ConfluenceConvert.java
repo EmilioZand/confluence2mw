@@ -416,6 +416,10 @@ public class ConfluenceConvert {
 	
 	/* Change image tags to metadata compatible tags*/
 	text = text.replaceAll("~~ATTACHED_IMAGE~~images/(.+)", "[[File:$1]]");
+	
+	/* fix broken table headers */
+	text = text.replaceAll("<!-- header row end -->\n\\|", "<!-- header row end -->\n\\|-\n\\|");
+	
 	return text;
     }
 
